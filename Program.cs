@@ -405,6 +405,202 @@ Proqramlaşdırmada bu addımlara Reverse Engineering deyilir Və bu addım biz�
 
 
 
+                                                            Code First vs Database First
+
+Code First və Database First - Verilənlər bazası dizaynı və inkişafı üçün istifadə olunan iki fərqli yanaşmadır.
+
+Code First - Bu yanaşmada, əvvəlcə proqram kodu yazılır və sonra bu koddan verilənlər bazası sxemi avtomatik olaraq yaradılır.
+Database First - Bu yanaşmada, əvvəlcə verilənlər bazası dizayn edilir və sonra bu dizayndan proqram kodu avtomatik olaraq yaradılır.
+
+
+                                                            Entity Framework Core 
+
+EF Core - Entity Framework Core - .NET Framework daxilində verilənlər bazası ilə işləmək üçün istifadə olunan bir ORM (Object-Relational Mapping) kitabxanasıdır.
+Bu kitabxana, verilənlər bazası əməliyyatlarını daha asan və səmərəli bir şəkildə həyata keçirmək üçün istifadə olunur və artıq code yazarkən bir SQL əməliyyatı yazmağa ehtiyac qalmır.
+Bunun üçün biz LİNQ for Entities-dən istifadə edirik. Yazdığımız hər bir code sətri arxa planda bir SQL əməliyyatı yaradır. Və bu əməliyyatlar verilənlər bazasında icra olunur. Bununla biz həm vaxt qazanırıq həm də kodumuz daha oxunaqlı olur.
+using ADO_NET_64._LINQ_For_Entity; Kitabxanasından istifadə edirik.
+
+using LibraryContext context = new();
+
+Gəlin bu methodlara ətraflı baxaq:
+1.Where: Bu metod, verilənlər bazasından müəyyən bir şərtə uyğun gələn qeydləri seçmək üçün istifadə olunur.
+context.Books.Where(b => b.AuthorId == 1).ToList().ForEach(Console.WriteLine());
+
+2. EF.Functions.Like: Bu metod, verilənlər bazasında müəyyən bir şərtə uyğun gələn qeydləri seçmək üçün istifadə olunur.
+context.Books.Where(b => EF.Functions.Like(b.Title, "%C#%")).ToList().ForEach(Console.WriteLine());
+
+3. First, FirstOrDefault, Single, SingleOrDefault: Bu metodlar, verilənlər bazasından müəyyən bir şərtə uyğun gələn ilk və ya tək qeydi seçmək üçün istifadə olunur.
+context.Books.First(b => b.Id == 1); // Id-si 1 olan kitabı seçir.
+context.Books.FirstOrDefault(b => b.Id == 1); // Id-si 1 olan kitabı seçir və əgər belə bir kitab yoxdursa, null qaytarır.
+context.Books.Single(b => b.Id == 1); // Id-si 1 olan tək kitabı seçir. Əgər belə bir kitab yoxdursa və ya bir neçə kitab varsa, xəta verir.
+context.Books.SingleOrDefault(b => b.Id == 1); // Id-si 1 olan tək kitabı seçir və əgər belə bir kitab yoxdursa, null qaytarır. Əgər bir neçə kitab varsa, xəta verir.
+
+4. Find: Bu metod, verilənlər bazasından müəyyən bir şərtə uyğun gələn qeydi seçmək üçün istifadə olunur.
+context.Books.Find(1); // Id-si 1 olan kitabı seçir.
+
+5.All, Any: Bu metodlar, verilənlər bazasında müəyyən bir şərtə uyğun gələn bütün qeydləri və ya heç bir qeyd olmadığını yoxlamaq üçün istifadə olunur.
+context.Books.All(b => b.AuthorId == 1); // Bütün kitabların AuthorId-si 1-dir.
+context.Books.Any(b => b.AuthorId == 1); // Hər hansı bir kitabın AuthorId-si 1-dir.
+
+6.Select: Bu metod, verilənlər bazasından müəyyən bir şərtə uyğun gələn qeydləri seçmək və müəyyən sahələri götürmək üçün istifadə olunur.
+context.Books.Select(b => new { b.Title, b.PublishedYear }).ToList().ForEach(b => Console.WriteLine($"{b.Title} - {b.PublishedYear}"));
+
+
+7.OrderBy, OrderByDescending, ThenBy, ThenByDescending: Bu metodlar, verilənlər bazasından seçilən qeydləri müəyyən bir sahəyə görə sıralamaq üçün istifadə olunur.
+context.Books.OrderBy(b => b.PublishedYear).ToList().ForEach(Console.WriteLine); // Kitabları PublishedYear sahəsinə görə artan sırada sıralayır.
+context.Books.OrderByDescending(b => b.PublishedYear).ToList().ForEach(Console.WriteLine); // Kitabları PublishedYear sahəsinə görə azalan sırada sıralayır.
+context.Books.OrderBy(b => b.AuthorId).ThenBy(b => b.PublishedYear).ToList().ForEach(Console.WriteLine); // Kitabları əvvəlcə AuthorId sahəsinə görə, sonra isə PublishedYear sahəsinə görə artan sırada sıralayır.
+context.Books.OrderByDescending(b => b.AuthorId).ThenByDescending(b => b.PublishedYear).ToList().ForEach(Console.WriteLine); // Kitabları əvvəlcə AuthorId sahəsinə görə, sonra isə PublishedYear sahəsinə görə azalan sırada sıralayır.
+
+8. Join: Bu metod, verilənlər bazasındakı iki və ya daha çox cədvəli birləşdirmək üçün istifadə olunur.
+context.Books.Join(context.Authors, b => b.AuthorId, a => a.Id, (b, a) => new { b.Title, AuthorName = a.FirstName + " " + a.LastName }).ToList().ForEach(b => Console.WriteLine($"{b.Title} - {b.AuthorName}"));
+
+9. Take,TakeWhile, Skip, SkipWhile: Bu metodlar, verilənlər bazasından seçilən qeydlərin müəyyən bir hissəsini götürmək və ya atmaq üçün istifadə olunur.
+context.Books.Take(5).ToList().ForEach(Console.WriteLine); // İlk 5 kitabı götürür.
+context.Books.TakeWhile(b => b.PublishedYear < 2000).ToList().ForEach(Console.WriteLine); // PublishedYear sahəsi 2000-dən kiçik olan kitabları götürür.
+context.Books.Skip(5).ToList().ForEach(Console.WriteLine); // İlk 5 kitabı atlayır və qalan kitabları götürür.
+context.Books.SkipWhile(b => b.PublishedYear < 2000).ToList().ForEach(Console.WriteLine); // PublishedYear sahəsi 2000-dən kiçik olan kitabları atlayır və qalan kitabları götürür.
+
+Bu və digər LINQ metodları ilə verilənlər bazası əməliyyatlarını daha asan və səmərəli bir şəkildə həyata keçirə bilərsiniz.
+
+
+
+
+
+                                                            SQL Datatypes  - C# Datatypes
+
+int - int (int32)
+bigint - long (int64)
+smallint - short (int16)
+tinyint - byte (uint8)
+
+bit - bool (boolean)
+
+decimal, numeric, money, smallmoney - decimal
+float - double (double)
+real - float (single)
+
+date - DateTime (date only)
+datetime, datetime2, smalldatetime, time - DateTime (date and time)
+
+char, varchar, text, nchar, nvarchar, ntext - string (String)
+
+binary, varbinary, image - byte[] (byte array)
+uniqueidentifier - Guid (Globally Unique Identifier)
+
+
+                                                                  Table Relationships
+
+Table Relationships - Verilənlər bazasında cədvəllər arasında əlaqələri təmsil edən bir konsepsiyadır.
+
+1. One-to-One Relationship: Bu əlaqə növündə, bir cədvəldəki hər bir qeyd yalnız digər cədvəldəki bir qeyd ilə əlaqələndirilir. Məsələn, hər bir istifadəçi yalnız bir profil ilə əlaqələndirilir.
+2. One-to-Many Relationship: Bu əlaqə növündə, bir cədvəldəki hər bir qeyd digər cədvəldəki bir neçə qeyd ilə əlaqələndirilir. Məsələn, bir müəllif bir neçə kitab ilə əlaqələndirilir.
+3. Many-to-Many Relationship: Bu əlaqə növündə, bir cədvəldəki hər bir qeyd digər cədvəldəki bir neçə qeyd ilə əlaqələndirilir və əksinə. Məsələn, bir tələbə bir neçə kurs ilə əlaqələndirilir və bir kurs bir neçə tələbə ilə əlaqələndirilir. Bu əlaqə növü üçün əlavə bir cədvəl (junction table) istifadə olunur.
+
+
+1. One-to-One Relationship - bu əlaqə növündə bizə sadəcə iki class bəs edir ki düzgün şəkildə bağlayaq.
+
+class StudetnContext : DbContext
+{
+    public StudentContext()
+    {
+        Database.EnsureCreated(); // Bu metod, verilənlər bazasının yaradıldığını təmin edir. Əgər verilənlər bazası mövcud deyilsə, onu yaradır.
+        Database.EnsureDeleted(); // Bu metod, verilənlər bazasının silindiyini təmin edir. Əgər verilənlər bazası mövcud deyilsə, heç bir şey etmir.
+    }
+    public DbSet<Student> Students { get; set; }
+    public DbSet<StudentCard> StudentCard { get; set; }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=StudentDb;Integrated Security=True;Trust Server Certificate=True");
+    }
+}
+
+class Student
+{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+}
+
+class StudentCard
+{
+    public int Id { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    public int StudentId { get; set; } // Foreign Key
+}
+
+using StudentContext context = new();
+Student student1 = new()
+{
+    Name = "John Doe",
+    Age = 20
+};
+
+StudentCard studentCard1 = new()
+{
+    StartDate = DateTime.Now,
+    EndDate = DateTime.Now.AddYears(1)
+    StudentId = student1.Id // Foreign Key
+};
+context.StudentCard.Add(studentCard1
+context.Students.Add(student1);
+context.SaveChanges();
+
+Oxumaq üçün:
+var studentWithCard = context.Students
+    .Include(s => s.StudentCard) // Include metodu, əlaqəli cədvəlləri yükləmək üçün istifadə olunur.
+    .FirstOrDefault(s => s.Id == student1.Id);
+
+
+
+
+2. One-to-Many Relationship - bu əlaqə növündə bizə iki class və bir kolleksiya bəs edir ki düzgün şəkildə bağlayaq. Yəni əgər bir müəllifin bir neçə kitabı varsa bu zaman biz müəllif classında bir List<Book> Books {get;set;} kolleksiyasını əlavə edirik. Buda bizə düzgün one-to-many relationship yaratmağa kömək edir.
+
+class GroupContext : DbContext
+{
+    public GroupContext()
+    {
+        Database.EnsureCreated(); // Bu metod, verilənlər bazasının yaradıldığını təmin edir. Əgər verilənlər bazası mövcud deyilsə, onu yaradır.
+        Database.EnsureDeleted(); // Bu metod, verilənlər bazasının silindiyini təmin edir. Əgər verilənlər bazası mövcud deyilsə, heç bir şey etmir.
+    }
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=GroupDb;Integrated Security=True;Trust Server Certificate=True");
+    }
+}
+
+class Student{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public int Age { get; set; }
+    public int GroupId { get; set; } // Foreign Key
+}
+
+class Group{
+    public int Id { get; set; }
+    public string Name { get; set; }
+    public List<Student> Students { get; set; }
+}
+
+using (GroupContext context = new())
+{   
+    var Group1 = new Group
+    {
+        Name = "Group 1",
+        Students = new List<Student>
+        {
+            new Student { Name = "John Doe", Age = 20 },
+            new Student { Name = "Jane Doe", Age = 22 }
+        }
+    };
+    
+    context.Groups.Add(Group1);
+    context.SaveChanges();
+
+}
 
 
 
@@ -412,6 +608,11 @@ Proqramlaşdırmada bu addımlara Reverse Engineering deyilir Və bu addım biz�
 
 
 
+
+
+
+3. Many-to-Many Relationship - bu əlaqə növündə bizə üç class bəs edir ki düzgün şəkildə bağlayaq. Yəni əgər bir tələbənin bir neçə kursu varsa və bir kursun bir neçə tələbəsi varsa bu zaman biz tələbə və kurs class-larını birləşdirən əlavə bir class yaradırıq məsələn StudentCourse class-ı. Və bu class-da həm StudentId
+həm də CourseId saxlanılır. Və hər iki class-da bir List şəklində kolleksiya saxlanılır ki bu da bizə düzgün many-to-many relationship yaratmağa kömək edir. Və biz yazılan codu run etdikdə many-to-many əlaqəsində lazım olan 3cü  cədvəl avtomatik şəkildə yaranır
 
 
 

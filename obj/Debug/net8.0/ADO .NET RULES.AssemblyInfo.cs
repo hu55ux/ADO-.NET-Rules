@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ADO .NET RULES")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7c12e49f0aa2d493b3de92bc163413409bf6c491")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0b66b7c2649502104621de37f2fe22ae3ae155ac")]
 [assembly: System.Reflection.AssemblyProductAttribute("ADO .NET RULES")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ADO .NET RULES")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
