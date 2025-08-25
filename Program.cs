@@ -614,23 +614,305 @@ using (GroupContext context = new())
 3. Many-to-Many Relationship - bu əlaqə növündə bizə üç class bəs edir ki düzgün şəkildə bağlayaq. Yəni əgər bir tələbənin bir neçə kursu varsa və bir kursun bir neçə tələbəsi varsa bu zaman biz tələbə və kurs class-larını birləşdirən əlavə bir class yaradırıq məsələn StudentCourse class-ı. Və bu class-da həm StudentId
 həm də CourseId saxlanılır. Və hər iki class-da bir List şəklində kolleksiya saxlanılır ki bu da bizə düzgün many-to-many relationship yaratmağa kömək edir. Və biz yazılan codu run etdikdə many-to-many əlaqəsində lazım olan 3cü  cədvəl avtomatik şəkildə yaranır
 
+class User
+{
+    public int Id { get; set; }
+
+    public string Name { get; set; }
+
+    public string LastName { get; set; }
+
+    public List<SocialNetwork> SocialNetworks { get; set; } = new(); // Many-to-Many Relationship
+
+    public override string ToString()
+    {
+        return $"Id: {Id}, Name: {Name}, LastName: {LastName}";
+    }
+}
+     
+class SocialNetwork
+{
+    public int Id { get; set; }
+
+    public string Name { get; set; }
+
+    public List<User> Users { get; set; } = new(); // Many-to-Many Relationship
+
+    public override string ToString()
+    {
+        return $"Id: {Id}, Name: {Name}";
+    }
+}
+
+class SocialNetworkContext : DbContext
+{
+    public SocialNetworkContext()
+    {
+        Database.EnsureCreated(); // Bu metod, verilənlər bazasının yaradıldığını təmin edir. Əgər verilənlər bazası mövcud deyilsə, onu yaradır.
+        Database.EnsureDeleted(); // Bu metod, verilənlər bazasının silindiyini təmin edir. Əgər verilənlər bazası mövcud deyilsə, heç bir şey etmir.
+    }
+    public DbSet<User> Users { get; set; }
+    public DbSet<SocialNetwork> SocialNetworks { get; set; }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SocialNetworkDb;Integrated Security=True;Trust Server Certificate=True");
+    }
+}
+
+using (SocialNetworkContext context = new())
+{
+    SocialNetwork facebook = new SocialNetwork { Name = "Facebook" };
+    SocialNetwork twitter = new SocialNetwork { Name = "Twitter" };
+    User user1 = new User { Name = "John", LastName = "Doe"};
+    User user2 = new User { Name = "Jane", LastName = "Doe"};
+    facebook.Users.Add(user1);
+    facebook.Users.Add(user2);
+    twitter.Users.Add(user1);
+    context.SocialNetworks.AddRange(facebook, twitter);
+    context.SaveChanges();
+
+}
+
+
+
+
+                                                                Annotations
+
+Annotations - Entity Framework Core-da verilənlər bazası sxemini və davranışını təyin etmək üçün istifadə olunan atributlardır.
+
+class Teacher
+{
+    public int Id { get; set; }
+    public string firstName { get; set; }
+    public string lastName { get; set; }
+    public float salary { get; set; }
+    public override string ToString()
+    {
+        return $"Id: {Id}, FirstName: {firstName}, LastName: {lastName}";
+    }
+}
+
+class Student{
+
+    public int Id { get; set; }
+    public string firstName { get; set; }
+    public string lastName { get; set; }
+}
+
+class Group
+{
+    public int Id { get; set; }
+    public string GroupName { get; set; }
+    public int GroupRating { get; set; }
+    public int CourseYear { get; set; }
+    public List<Student> Students { get; set; } = new();
+    public override string ToString()
+    {
+        return $"Id: {Id}, GroupName: {GroupName}";
+    }
+
+}
+
+class Department{
+public int Id { get; set; }
+public string DepartmentName { get; set; }
+public List<Teacher> Teachers { get; set; } = new();
+}
+
+class Faculty{
+    public int Id { get; set; }
+    public string FacultyName { get; set; }
+public List<Group> Groups { get; set; } = new();
+
+}
+
+class SchoolContext : DbContext
+{
+    public SchoolContext()
+    {
+        Database.EnsureCreated(); // Bu metod, verilənlər bazasının yaradıldığını təmin edir. Əgər verilənlər bazası mövcud deyilsə, onu yaradır.
+        Database.EnsureDeleted(); // Bu metod, verilənlər bazasının silindiyini təmin edir. Əgər verilənlər bazası mövcud deyilsə, heç bir şey etmir.
+    }
+    public DbSet<Teacher> Teachers { get; set; }
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    public DbSet<Department> Departments { get; set; }
+    public DbSet<Faculty> Faculties { get; set; }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SchoolDb;Integrated Security=True;Trust Server Certificate=True");
+    }
+}
+
+using SchoolContext database=new();
+
+Student student = new()
+{
+    firstName="John",
+    LastName="Walker"
+};
+database.Add(student);
+
+Group group=new()
+{
+    GroupName="FSDM24_4",
+    GroupRating= 1,
+    CourseYear=2,
+    Students = [student]
+};
+
+database.Groups.Add(group);
+
+database.Faculties.Add(new(){FacultyName=Programming});
+
+Department department = new(){DepartmentName="Development"};
+
+Teacher teacher =new()
+{
+    FirstName="Isa",
+    LastName="Memmedli",
+    Salary = 15000
+};
+
+Teacher teacher1 =new()
+{
+    FirstName="Nadir",
+    LastName="Zamanov",
+    Salary = 15000
+};
+
+database.Teachers.AddRange(teacher,teacher1);
+
+
+[] - ilə biz attribut əlavə edirik.
+
+? - Bu işarə ilə biz hər hansı bir data null ola bilər deyə bilirik. Məsələn əgər bir tələbənin middle name-i yoxdursa biz bu zaman string? MiddleName {get;set;} yazırıq ki bu zaman bu data null ola bilər.
+
+[Required] - Bu annotation ilə biz bir data-nın mütləq doldurulması lazım olduğunu bildiririk. Məsələn əgər bir tələbənin adı mütləq doldurulmalıdırsa biz bu zaman [Required] public string FirstName {get;set;} yazırıq.
+Əlavə olaraq data əgər nullable olsa belə [Required] ilə biz bu data-nın mütləq doldurulması lazım olduğunu bildiririk. 
+
+[MaxLength(50)] - Bu annotation ilə biz bir data-nın maksimum uzunluğunu təyin edirik. Məsələn əgər bir tələbənin adı maksimum 50 simvol ola bilərsə biz bu zaman [MaxLength(50)] public string FirstName {get;set;} yazırıq.
+
+[ForeignKey("GroupId")] - Bu annotation ilə biz bir data-nın foreign key olduğunu bildiririk. Məsələn əgər bir tələbənin groupId-si foreign key-dirsə biz bu zaman [ForeignKey("GroupId")] public int GroupId {get;set;} yazırıq.
+
+[Column("First_Name")] - Bu annotation ilə biz bir data-nın verilənlər bazasında hansı sütunda saxlanılacağını təyin edirik. Məsələn əgər bir tələbənin adı verilənlər bazasında First_Name sütununda saxlanılacaqsa biz 
+cbu zaman [Column("First_Name")] public string FirstName {get;set;} yazırıq.
+
+Navigation Properties - Bu xüsusiyyətlər, bir cədvəldəki qeydlərin digər cədvəllərdəki əlaqəli qeydlərə asanlıqla daxil olmasını təmin edir.
+Məsələn əgər bir tələbənin bir qrupu varsa biz bu zaman Student class-ında public virtual Group Group {get;set;} yazırıq ki bu zaman biz bir tələbənin qrupuna asanlıqla daxil ola bilək.
+
+Biz class yaranan zaman əgər bir Id sözü işlənən bir property yaradırıqsa bu avtomatik Primary Key olaraq təyin olunur. Amma biz Id hissəciyini istifadə etmək istəmiriksə bu zaman:
+[Key] - Bu annotation ilə biz bir data-nın primary key olduğunu bildiririk. Məsələn əgər bir tələbənin Id-si primary key-dirsə biz bu zaman [Key] public int StudentId {get;set;} yazırıq.
+
+[Column(TypeName="varchar(100)")] - Bu annotation ilə biz bir data-nın verilənlər bazasında hansı tipdə saxlanılacağını təyin edirik. Məsələn əgər bir tələbənin adı verilənlər bazasında varchar(100) tipində 
+saxlanılacaqsa biz bu zaman [Column(TypeName="varchar(100)")] public string FirstName {get;set;} yazırıq.
+
+[Range(1-5)] - Bu annotation ilə biz bir data-nın müəyyən bir aralıqda olmasını təmin edirik. Məsələn əgər bir qrupun reytinqi 1-dən 5-ə qədər olmalıdırsa biz bu zaman [Range(1,5)] public int GroupRating {get;set;} yazırıq.
+Amma bu annotation yalnız integer və float tiplərində işləyir. 
+Bu annotation istifadə oluna bilməsi üçün EFCore.CheckConstraints NuGet paketi əlavə olunmalıdır Və OnModelCreating metodunda 
+optionsBuilder
+        .UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=SchoolDb;Integrated Security=True;Trust Server Certificate=True"
+        .UseValidationCheckConstraints();  // Bu metod, verilənlər bazasında yoxlamaların tətbiq olunmasını təmin edir.
+Və artıq biz istifadə etdiyimiz hər bir şərtləri Check Constraints kimi verilənlər bazasında da tətbiq edə bilərik.
 
 
 
 
 
+                                                                        Fluent API
 
+Fluent API - Entity Framework Core-da verilənlər bazası sxemini və davranışını təyin etmək üçün istifadə olunan bir proqramlaşdırma yanaşmasıdır.
+Yəni biz class-larımızda annotation-lar istifadə etmək əvəzinə OnModelCreating metodunda Fluent API istifadə edərək verilənlər bazası sxemini və davranışını təyin edirik.
 
+ protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        // Group
+        modelBuilder 
+            .Entity<Group>() - Bu metod, Group entity-sini təmsil edir.
+            .Property(x => x.GroupName) - Bu metod, Group entity-sinin GroupName property-sini təmsil edir.
+            .IsRequired() - Bu metod, GroupName property-sinin mütləq doldurulması lazım olduğunu bildirir.
+            .HasMaxLength(20); - Bu metod, GroupName property-sinin maksimum uzunluğunu 20 simvol olaraq təyin edir.
 
+        modelBuilder
+            .Entity<Group>() - Bu metod, Group entity-sini təmsil edir.
+            .HasIndex(x => x.GroupName) - Bu metod, GroupName property-sinə indeks əlavə edir.
+            .IsUnique(); - Bu metod, GroupName property-sinin unikal olmasını təmin edir.
 
+        modelBuilder
+            .Entity<Group>() - Bu metod, Group entity-sini təmsil edir.
+            .Property(x => x.Id) - Bu metod, Group entity-sinin Id property-sini təmsil edir.
+            .ValueGeneratedOnAdd(); - Bu metod, Id property-sinin avtomatik olaraq artırılmasını təmin edir.
 
+        modelBuilder
+            .Entity<Group>() - Bu metod, Group entity-sini təmsil edir.
+            .ToTable(x => x.HasCheckConstraint("CK_CourseYear", 
+            "CourseYear >= 1 AND CourseYear <= 4")); - Bu metod, CourseYear property-sinin 1-dən 4-ə qədər olmasını təmin edir.
 
+        modelBuilder
+            .Entity<Group>() - Bu metod, Group entity-sini təmsil edir.
+            .ToTable(x => x.HasCheckConstraint("CK_GroupRating",
+            "GroupRating >= 0 AND GroupRating <= 12")); - Bu metod, GroupRating property-sinin 0-dan 12-ə qədər olmasını təmin edir.
 
+        // Teacher
+        modelBuilder
+            .Entity<Teacher>() - Bu metod, Teacher entity-sini təmsil edir.
+            .Property(x => x.TeacherId) - Bu metod, Teacher entity-sinin TeacherId property-sini təmsil edir.
+            .HasColumnName("Id") - Bu metod, TeacherId property-sinin verilənlər bazasında Id sütununda saxlanılacağını təyin edir.
+            .ValueGeneratedOnAdd(); - Bu metod, TeacherId property-sinin avtomatik olaraq artırılmasını təmin edir.
 
+        modelBuilder
+            .Entity<Teacher>() - Bu metod, Teacher entity-sini təmsil edir.
+            .Property(x => x.FirstName) - Bu metod, Teacher entity-sinin FirstName property-sini təmsil edir.
+            .IsRequired() - Bu metod, FirstName property-sinin mütləq doldurulması lazım olduğunu bildirir.
+            .HasMaxLength(20); - Bu metod, FirstName property-sinin maksimum uzunluğunu 20 simvol olaraq təyin edir.
 
+        modelBuilder
+            .Entity<Teacher>() - Bu metod, Teacher entity-sini təmsil edir.
+            .Property(x => x.LastName) - Bu metod, Teacher entity-sinin LastName property-sini təmsil edir.
+            .IsRequired() - Bu metod, LastName property-sinin mütləq doldurulması lazım olduğunu bildirir.
+            .HasMaxLength(30); - Bu metod, LastName property-sinin maksimum uzunluğunu 30 simvol olaraq təyin edir.
 
+        modelBuilder
+           .Entity<Teacher>() - Bu metod, Teacher entity-sini təmsil edir.
+           .Property(x => x.Email) - Bu metod, Teacher entity-sinin Email property-sini təmsil edir.
+           .IsRequired() - Bu metod, Email property-sinin mütləq doldurulması lazım olduğunu bildirir.
+           .HasColumnType("varchar") - Bu metod, Email property-sinin verilənlər bazasında varchar tipində saxlanılacağını təyin edir.
+           .HasMaxLength(50); - Bu metod, Email property-sinin maksimum uzunluğunu 50 simvol olaraq təyin edir.
 
+        modelBuilder
+            .Entity<Teacher>() - Bu metod, Teacher entity-sini təmsil edir.
+            .HasIndex(x => x.Email) - Bu metod, Email property-sinə indeks əlavə edir.
+            .IsUnique() - Bu metod, Email property-sinin unikal olmasını təmin edir.
+            .HasDatabaseName("UQ_Email"); - Bu metod, Email property-sinin unikal indeksinin adını UQ_Email olaraq təyin edir.
 
+        // Student
+        modelBuilder
+            .Entity<Student>() - Bu metod, Student entity-sini təmsil edir.
+            .HasOne(s => s.Group) - Bu metod, Student entity-sinin Group navigation property-sini təmsil edir.
+            .WithMany(g => g.Students) - Bu metod, Group entity-sinin Students navigation property-sini təmsil edir.
+            .HasForeignKey(s => s.GroupId) - Bu metod, Student entity-sinin GroupId property-sinin foreign key olduğunu bildirir.
+            .OnDelete(DeleteBehavior.NoAction) - Bu metod, bir qrup silindikdə ona aid tələbələrin silinməməsini təmin edir.
+            .HasConstraintName("FK_Groups"); - Bu metod, foreign key constraint-in adını FK_Groups olaraq təyin edir.
+
+        modelBuilder
+           .Entity<Student>() - Bu metod, Student entity-sini təmsil edir.
+           .Property(x => x.FirstName) - Bu metod, Student entity-sinin FirstName property-sini təmsil edir.
+           .IsRequired() - Bu metod, FirstName property-sinin mütləq doldurulması lazım olduğunu bildirir.
+           .HasMaxLength(20); - Bu metod, FirstName property-sinin maksimum uzunluğunu 20 simvol olaraq təyin edir.
+
+        modelBuilder
+           .Entity<Student>() - Bu metod, Student entity-sini təmsil edir.
+           .Property(x => x.LastName) - Bu metod, Student entity-sinin LastName property-sini təmsil edir.
+           .IsRequired() - Bu metod, LastName property-sinin mütləq doldurulması lazım olduğunu bildirir.
+           .HasMaxLength(30); - Bu metod, LastName property-sinin maksimum uzunluğunu 30 simvol olaraq təyin edir.
+
+        modelBuilder
+           .Entity<Student>() - Bu metod, Student entity-sini təmsil edir.
+           .Property(x => x.GroupId) - Bu metod, Student entity-sinin GroupId property-sini təmsil edir.
+           .IsRequired() - Bu metod, GroupId property-sinin mütləq doldurulması lazım olduğunu bildirir.
+           .HasColumnName("Id_Group"); - Bu metod, GroupId property-sinin verilənlər bazasında Id_Group sütununda saxlanılacağını təyin edir.
+
+    }
 
 
 
