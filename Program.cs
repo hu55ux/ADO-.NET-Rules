@@ -918,12 +918,159 @@ Yəni biz class-larımızda annotation-lar istifadə etmək əvəzinə OnModelCr
 
 
 
+                                                                Migrations
+
+Bildiyimiz kimi Database-lər yaradılan zaman onların strukturu ətraflı və düşünülmüş şəkildə yaradılmalıdır ki daha sonra müəyyən struktur dəyişikliyi edilməsin və ya əlavə olunmasın.
+Amma bu halda çox mümkün deyil. Çünki layihə inkişaf etdikcə verilənlər bazasında müəyyən dəyişikliklər etmək lazım gəlir.
+Bu zamanda biz gərək ya SQL kodları yazaraq verilənlər bazasında dəyişiklik edək və ya Entity Framework Core istifadə edərək bu dəyişiklikləri edək.
+Qeyd edim ki Entity Framework Core istifadə edərək verilənlər bazasında dəyişiklik etmək daha asandır və daha az vaxt aparır.
+Və bu struktur dəyişikliklərini Migrations adlandırırıq.
+
+Migrations - Entity Framework Core-da verilənlər bazası sxemində edilən dəyişiklikləri izləmək və tətbiq etmək üçün istifadə olunan bir xüsusiyyətdir.
+Məsələn biz bir student class yaratmışıq və bu classa bir gender propertiesi əlavə etməliyik. amma artıq databasse yaranıb və biz bu dəyişiklikləri əllə etmək istəmirik.
+Bu zaman biz Migrations istifadə edərək bu dəyişiklikləri asanlıqla edə bilərik.
+
+class Student
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public int Age { get; set; }
+    public string Email { get; set; } 
+}
+
+Tövsiyyə olunur ki biz database yaradılarkən Migration yaradaq ki daha sonra dəyişiklik etmək lazım gəlsə rahatlıqla edə bilək.
+Terminal açılır və:
+dotnet ef migrations add InitialCreate
+Bu zaman Migrations qovluğu yaranır və bu qovluqda InitialCreate adlı bir class yaranır. Və bu class-da verilənlər bazasında yaradılan cədvəllər və onların strukturu saxlanılır.
+Hər hansı bir dəyişiklik etmək lazım gəlsə biz yenidən terminalda:
+dotnet ef migrations add AddGenderToStudent
+Bu zaman AddGenderToStudent adlı bir class yaranır və bu class-da verilənlər bazasında edilən dəyişikliklər saxlanılır.
+Və bu migration-ları verilənlər bazasına tətbiq etmək üçün isə:
+dotnet ef database update
+
+Həmdə Əgər biz hər hansı bir projecti pull etmək istəyiriksə bu zamanda projectimizi pull etdikdən sora terminalda sadəcə
+
+dotnet ef database update edərək migration-ın işləməsini və düzgün şəkildə projectimizin hazır olmasını təmin edirik.
+
+
+
+                                        
+
+                                                        Read relational data's
+
+Mürəkkəb database-lərdə cədvəllər arasında əlaqələr olur və bizə lazım olan məlumatları əldə etmək üçün bu əlaqələri nəzərə almaq lazımdır.
+Bu dataları oxumaq üçün 3 növ yanaşma var:
+
+
+class Student
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; }
+    public string LastName { get; set; }
+    public int Age { get; set; }
+    public int GroupId { get; set; } // Foreign Key
+    public virtual Group Group { get; set; } // Navigation Property
+}
+
+class Group
+{
+    public int Id { get; set; }
+    public string GroupName { get; set; }
+    public int CourseYear { get; set; }
+    public List<Student> Students { get; set; } = new();
+    public override string ToString()
+    {
+        return $"Id: {Id}, GroupName: {GroupName}";
+    }
+}
+
+class ApplicationContext : DbContext
+{
+    public DbSet<Student> Students { get; set; }
+    public DbSet<Group> Groups { get; set; }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseSqlServer("Server=(localdb)\\MSSQLLocalDB;Database=ApplicationDb;Integrated Security=True;Trust Server Certificate=True");
+    }
+}
+
+using ApplicationContext context = new();
+
+List<Student> CyberSecurity=new List<Student>
+{
+    new Student { FirstName = "John", LastName = "Doe", Age = 20 },
+    new Student { FirstName = "Jane", LastName = "Doe", Age = 22 },
+    new Student { FirstName = "Jim", LastName = "Beam", Age = 21 },
+    new Student { FirstName = "Jack", LastName = "Daniels", Age = 23 },
+    new Student { FirstName = "Jill", LastName = "Valentine", Age = 20 },
+    new Student { FirstName = "Jake", LastName = "Muller", Age = 22 }
+};
+
+List<Student> Programming=new List<Student>
+{
+    new Student { FirstName = "Alice", LastName = "Smith", Age = 20 },
+    new Student { FirstName = "Bob", LastName = "Johnson", Age = 22 },
+    new Student { FirstName = "Charlie", LastName = "Brown", Age = 21 },
+    new Student { FirstName = "David", LastName = "Williams", Age = 23 },
+    new Student { FirstName = "Eve", LastName = "Davis", Age = 20 },
+    new Student { FirstName = "Frank", LastName = "Miller", Age = 22 }
+};
+
+List<Student> Design=new List<Student>
+{
+    new Student { FirstName = "Grace", LastName = "Wilson", Age = 20 },
+    new Student { FirstName = "Hank", LastName = "Moore", Age = 22 },
+    new Student { FirstName = "Ivy", LastName = "Taylor", Age = 21 },
+    new Student { FirstName = "Jack", LastName = "Anderson", Age = 23 },
+    new Student { FirstName = "Kathy", LastName = "Thomas", Age = 20 },
+    new Student { FirstName = "Leo", LastName = "Jackson", Age = 22 }
+};
+
+context.Groups.AddRange(
+    new Group { GroupName = "Cyber Security", CourseYear = 2, Students = CyberSecurity },
+    new Group { GroupName = "Programming", CourseYear = 2, Students = Programming },
+    new Group { GroupName = "Design", CourseYear = 2, Students = Design }
+);
+context.SaveChanges();
+
+var groups=context.Groups.ToList(); - Bu kodu istifadə etsək bizə düzgün return etmiyəcək 
+
+
+1. Eager Loading - Bu yanaşmada, əlaqəli məlumatlar əsas sorğu ilə birlikdə yüklənir. Bu, əlaqəli məlumatlara tez bir zamanda daxil olmaq üçün faydalıdır, lakin çoxlu əlaqələr olduqda performans problemlərinə səbəb ola bilər.
+Burada bizə iki method kömək edir:
+Include() - Bu method, əlaqəli məlumatları yükləmək üçün istifadə olunur.
+ThenInclude() - Bu method, çox səviyyəli əlaqəli məlumatları yükləmək üçün istifadə olunur.
+
+var groups = context.Groups.Include(g => g.Students) // Include metodu, əlaqəli cədvəlləri yükləmək üçün istifadə olunur.
+    .ToList();
+
+Bu kodun altında yatan SQL sorğusu belə olacaq:
+SELECT *
+FROM [Groups] AS [g]
+LEFT JOIN [Students] AS [s] ON [g].[Id] = [s].[GroupId]
+
+İndi də əksinə edək:
+
+var students = context.Students.Include(s => s.Group) // Include metodu, əlaqəli cədvəlləri yükləmək üçün istifadə olunur.
+    .ToList();
+
+foreach (var student in students)
+{
+    Console.WriteLine($"{student.FirstName} {student.LastName} - {student.Group}"); - Navigation property vasitəsilə əlaqəli məlumatlara daxil oluruq.
+}
+
+Bir neçə table birləşdirmək üçün ThenInclude() metodundan istifadə edirik:
+
+var students = context.Students.Include(s => s.SCards)
+                                .ThenInclude(sc => sc.School)
+                                .ToList();
 
 
 
 
-
-
+2. Explicit Loading - Bu yanaşmada, əlaqəli məlumatlar əsas sorğu ilə birlikdə yüklənmir, lakin lazım olduqda ayrıca sorğular vasitəsilə yüklənir. Bu, əlaqəli məlumatlara daha çox nəzarət imkanı verir, lakin əlavə sorğular səbəbindən performans problemlərinə səbəb ola bilər.
+3. Lazy Loading - Bu yanaşmada, əlaqəli məlumatlar əsas sorğu ilə birlikdə yüklənmir və lazım olduqda avtomatik olaraq yüklənir. Bu, əlaqəli məlumatlara asanlıqla daxil olmaq üçün faydalıdır, lakin əlavə sorğular səbəbindən performans problemlərinə səbəb ola bilər.
 
 
 
